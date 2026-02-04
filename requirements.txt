@@ -1,0 +1,6 @@
+Flask
+escpos
+Pillow
+pdf2image
+discord
+python-dotenv
