@@ -1,8 +1,9 @@
 import discord
 
 from main import print_task
+from src.secret_manager import get_key
 
-TOKEN_DISCORD= env...
+TOKEN_DISCORD=get_key("discord")
 API_TOKEN = TOKEN_DISCORD
 
 
