@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <style>
+      @page {
+         width: 80mm;
+         height: 60mm;
+         margin: 1mm;
+      }
+
+      body {
+         font-family: 'monospace', monospace;
+         font-size: 14px;
+         line-height: 1.5;
+         /* Typical thermal printer width */
+         margin: 0;
+         padding: 0;
+         /* Apply rotation and translation to the content within the body */
+         transform: rotate(90deg);
+      }
+
+      h1 {
+         margin-top: 1px;
+         text-align: center;
+         font-size: 15px;
+      }
+
+      ul {
+         list-style-type: none;
+         padding: 0;
+         margin: 0;
+      }
+
+      li {
+         margin-bottom: 2px;
+      }
+
+      .checklist-item {
+         display: inline-block;
+         width: 1.2em;
+         height: 1.2em;
+         border: 1px solid black;
+         vertical-align: middle;
+         margin-right: 5px;
+      }
+   </style>
+
+</head>
+
+<body>
+   <h1>Wildcards</h1>
+   <ul>
+      <li>Alice</li>
+      <li>Bob</li>
+      <li>Scenes: </li>
+      <li>Secrets:
+   </ul>
+</body>
+
+</html>

@@ -1,0 +1,13 @@
+Flask
+escpos
+discord
+python-dotenv
+requests
+# reportlab
+google.genai
+weasyprint
+pymupdf
+APScheduler
+gunicorn
+aiohttp
+schedule

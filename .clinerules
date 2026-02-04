@@ -1,0 +1,6 @@
+
+use:
+source venv/bin/activate
+
+This device is: 
+this is a raspberry pi 4

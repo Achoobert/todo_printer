@@ -1,0 +1,13 @@
+services:
+  todo-printer:
+    build: .
+    environment:
+      - API_TOKEN=${TOKEN_DISCORD}
+      - GITHUB_PAT=${GITHUB_PAT}
+      - GEMINI_KEY=${GEMINI_KEY}
+    restart: unless-stopped
+    ports:
+      - 8333:8333
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"
+    privileged: true

@@ -1,0 +1,29 @@
+[x] use venv
+
+[X] End goal is to build a docker container: 
+[x] Test with ./dev.sh
+[ ] keep png in memory? to avoid writing to sd card
+
+REFACTOR:
+
+[ ] CORE SERVICE
+app.py
+API open over POST, outputs to thermal printer
+on localhost:8444
+
+If (character count under 40) converts to image, thermal print image - see create_short_task_image
+If (character count ocer 40) place in html template, to pdf, convert to image, thermal print image - see html_to_image_weasyprint_pymupdf
+If "html" converts to pdf, convert to image, thermal print image -- see html_to_image_weasyprint_pymupdf  
+
+[ ] DISCORD SERVICE
+boy.py
+Run Discord Bot connection
+Listen for discord messages, forward to message_router, which formats then forwards them to CORE SERVICE
+listen on on localhost:8555: for "thread name", when receive, get latest message from that thread, format, and send to CORE SERVICE for printing
+
+
+
+[ ] SCHEDULE SERVICE
+scheduler.py
+curl localhost:8555 at set times of day with set thread names
+
