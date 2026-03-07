@@ -2,7 +2,7 @@ services:
   todo-printer:
     build: .
     environment:
-      - API_TOKEN=${TOKEN_DISCORD}
+      - DISCORD_API_TOKEN=${DISCORD_API_TOKEN}
       - GITHUB_PAT=${GITHUB_PAT}
       - GEMINI_KEY=${GEMINI_KEY}
     restart: unless-stopped

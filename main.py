@@ -1,3 +1,4 @@
+import os
 import logging
 from threading import Thread
 import time
@@ -5,6 +6,8 @@ import time
 from src.app import start as start_core_service
 from src.bot import start_bot as start_discord_service
 from src.scheduler import start_scheduler as start_schedule_service
+
+DISCORD_API_TOKEN = os.getenv("DISCORD_API_TOKEN")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

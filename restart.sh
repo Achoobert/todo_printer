@@ -1,11 +1,14 @@
 #!/bin/bash
+# source my_custom.env
+
 source venv/bin/activate
 ps aux | grep main.py
 ps aux | grep bot.py
-ps aux | grep app.py
-ps aux | grep scheduler.py
 pkill -f bot.py
 pkill -f main.py
-pkill -f app.py
-pkill -f scheduler
 sleep 1
+
+
+source venv/bin/activate
+sleep 1
+nohup python3 main.py &

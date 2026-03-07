@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 # Configuration for scheduled tasks
 # Example: {"thread_name": "tasks", "schedule_time": "10:00"}
 SCHEDULED_TASKS = [
-    {"thread_name": "garbage", "schedule_time": "6:30"},
-    {"thread_name": "progress", "schedule_time": "6:31"},
+    {"thread_name": "goals", "schedule_time": "06:29"},
+    {"thread_name": "garbage", "schedule_time": "06:30"},
+    {"thread_name": "progress", "schedule_time": "06:31"},
+    {"thread_name": "goals", "schedule_time": "15:05"},
 ]
 
 async def send_discord_message_trigger(thread_name: str):

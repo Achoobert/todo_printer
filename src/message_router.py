@@ -2,10 +2,13 @@ import os
 import requests
 import tempfile
 import logging
+
 logger = logging.getLogger(__name__)
 
 from .html_to_image import html_convert_to_image, create_text_image
-from .task_image_generator import create_short_task_image
+from .short_task import create_short_task_html
+from .medium_list import create_list_html
+from .daily_briefing_builder import daily_briefing
 from .llm_helper import expand_task
 from .printer import print_text, print_image_to_printer # Renamed print_img to print_image_to_printer to avoid confusion
 
@@ -25,14 +28,12 @@ def web_processor(message):
         print_html(task_content)
     elif len(task_content) < 40:
         logger.info(f"Processing short task (length: {len(task_content)}).")
-        image_obj = create_short_task_image(task_content, "MEDIUM")
-        if image_obj:
-            print_image_to_printer(image_obj)
+        short_task_html = create_short_task_html(task_content, priority="LOW")
+        print_html(short_task_html)
     else:
         logger.info(f"Processing long task (length: {len(task_content)}).")
         # For longer text, place in HTML template, convert to PDF, then to image
-        html_content = f"<html><body><p>{task_content}</p></body></html>"
-        print_html(html_content)
+        print_html(create_list_html(task_content))
 
 async def bot_processor(message, client):
     """process incoming messages from discord"""
@@ -43,16 +44,14 @@ async def bot_processor(message, client):
             with open("templates/lazy_gm.html", "r") as f:
                 lazy_gm_content = f.read()
             print_html(lazy_gm_content)
-        elif message.content.strip().lower() == "tiny":
-            with open("templates/tiny.html", "r") as f:
-                tiny = f.read()
-            print_html(tiny)
         else:
-            # create_short_task_image should return a PIL Image object
-            image_obj = create_short_task_image(message.content, priority="LOW")
-            if image_obj:
-                print_image_to_printer(image_obj)
-    
+            short_task_html = create_short_task_html(message.content, priority="LOW")
+            print_html(short_task_html)
+
+    if message.channel.name == "goals":
+        b_html = daily_briefing(message.content)
+        print_html(b_html)
+
     if message.channel.name == "lists":
         print_list(message.content)
 
@@ -90,13 +89,21 @@ async def bot_direct(message, client):
     if message.author == client.user:
         return
     if message.channel.name == "tasks":
-        # create_short_task_image should return a PIL Image object
-        image_obj = create_short_task_image(message.content, priority="LOW")
-        if image_obj:
-            print_image_to_printer(image_obj)
+        short_task_html = create_short_task_html(message.content, priority="LOW")
+        print_html(short_task_html)
     
-    print_text_as_image(message.content)
+    if message.channel.name == "goals":
+        # logger.info(f"Processing  message from goals")
+        b_html = daily_briefing(message.content)
+        print_html(b_html)
+    else:
+        print_text_as_image(message.content)
 
+async def bot_direct_daily_briefing(message):
+    """process incoming request for daily_briefing, whcih includes current goal-text from discord"""
+    # create html, send to HTML printer
+    b_html = daily_briefing(message.content)
+    print_html(b_html)
 
 def print_html(html):
     """Converts HTML into an image and prints it to the receipt printer."""
@@ -106,11 +113,12 @@ def print_html(html):
         print_image_to_printer(image_obj)
 
 def print_list(text):
-    checklist_version = ""
-    for line in text.split('\n'):
-        if line.strip():
-            checklist_version += (f"[ ] {line.strip()}\n")
-    print_text_as_image(checklist_version)
+    print_html(create_list_html(text))
+    # checklist_version = ""
+    # for line in text.split('\n'):
+    #     if line.strip():
+    #         checklist_version += (f"[ ] {line.strip()}\n")
+    # print_text_as_image(checklist_version)
 
 def print_text_as_image(text):
     # create_text_image should return a PIL Image object

@@ -27,3 +27,7 @@ listen on on localhost:8555: for "thread name", when receive, get latest message
 scheduler.py
 curl localhost:8555 at set times of day with set thread names
 
+[ ] make a daily brifing 
+  days left countdown
+  remaining free time calulation in hours countdown
+  random motivational line 
