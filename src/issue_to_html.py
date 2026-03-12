@@ -9,10 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 def markdown_to_plain(text):
-    """Strip markdown syntax to plain text (no new deps)."""
+    """Strip markdown syntax to plain text (no new deps). Bare URLs removed for paper output."""
     if not text:
         return ""
     s = text.strip()
+    # Bare URLs (unclickable on paper) -> remove
+    s = re.sub(r"https?://[^\s]+", "", s)
     # Remove code fences and inline code
     s = re.sub(r"`[^`]*`", "", s)
     s = re.sub(r"```[\s\S]*?```", "", s)
@@ -28,27 +30,29 @@ def markdown_to_plain(text):
     # List markers
     s = re.sub(r"^\s*[-*+]\s+", "", s, flags=re.MULTILINE)
     s = re.sub(r"^\s*\d+\.\s+", "", s, flags=re.MULTILINE)
+    # Collapse multiple spaces/newlines left after URL removal
+    s = re.sub(r"\s+", " ", s)
     return s.strip()
 
 
-def to_html(repo, task_data, date_text):
+def to_html(repo, task_data, date_text, title):
     task_html = ""
     title_total_height = 0
+    mmHeaderHeight = 18
     mmPerLine = 10
     maxCharPerLine = 16
 
     for line in task_data.split("\n"):
         if line.strip():
-            plain = markdown_to_plain(line)
-            if not plain:
+            line = markdown_to_plain(line)
+            if not line:
                 continue
-            line = plain.strip()
             linelen = len(line)
             title_total_height += mmPerLine * (math.ceil(linelen / maxCharPerLine))
             task_html += f"<li>{line}</li>"
 
     date_height = 7
-    htmlheight = title_total_height + date_height
+    htmlheight = mmHeaderHeight + title_total_height + date_height
 
     subtitle_text = f"{repo}: {date_text}" if repo else date_text
 
@@ -64,6 +68,12 @@ def to_html(repo, task_data, date_text):
          line-height: 1.5;
          margin: 0;
          padding: 0;
+      }}
+
+      h1 {{
+         text-align: center;
+         display: inline;
+         font-size: 38px;
       }}
 
       subtitle {{
@@ -89,6 +99,7 @@ def to_html(repo, task_data, date_text):
    </style>
    </head>
    <body>
+      <h1>{title}</h1>
       <subtitle>{subtitle_text}</subtitle>
       <ul>
          {task_html}
@@ -101,6 +112,7 @@ def to_html(repo, task_data, date_text):
         subtitle_text=subtitle_text,
         task_html=task_html,
         htmlheight=htmlheight,
+        title=title,
     )
 
 
@@ -138,7 +150,7 @@ def create_github_issue_html(repo=None, body=None, created_at=None, title=None):
     date_text = _date_text_from_created_at(created_at)
     subtitle_repo = repo or ""
     if title and subtitle_repo:
-        subtitle_repo = f"{subtitle_repo}: {title}"
+        subtitle_repo = f"{subtitle_repo}"
     elif title:
         subtitle_repo = title
-    return to_html(subtitle_repo, body, date_text)
+    return to_html(subtitle_repo, body, date_text, title)
