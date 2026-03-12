@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from .message_router import web_processor
+from .message_router import web_processor, issue_processor
 
 app = Flask(__name__)
 
@@ -12,6 +12,15 @@ def submit():
     if request.is_json:
         data = request.get_json()
         web_processor(data)
+        return "Task submitted and sent to printer!", 200
+    return "Error: Request must be JSON.", 400
+
+# {content: ($repo + ": " + .title + " " + (((.body // "") | split("\n")[0:3] | join(" ") | .[0:200]) // "") + " " + .createdAt)}'
+@app.route("/submit-todo-github-issue", methods=["POST"])
+def submit_todo_github_issue():
+    if request.is_json:
+        data = request.get_json()
+        issue_processor(data)
         return "Task submitted and sent to printer!", 200
     return "Error: Request must be JSON.", 400
 

@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 from .html_to_image import html_convert_to_image, create_text_image
 from .short_task import create_short_task_html
 from .medium_list import create_list_html
+from .issue_to_html import create_github_issue_html
 from .daily_briefing_builder import daily_briefing
 from .llm_helper import expand_task
 from .printer import print_text, print_image_to_printer # Renamed print_img to print_image_to_printer to avoid confusion
@@ -104,6 +105,31 @@ async def bot_direct_daily_briefing(message):
     # create html, send to HTML printer
     b_html = daily_briefing(message.content)
     print_html(b_html)
+
+
+def issue_processor(message):
+    repo = message.get("repo")
+    title = message.get("title")
+    body = message.get("body")
+    created_at = message.get("createdAt") or message.get("created_at")
+    content = message.get("content")
+
+    has_structured = repo or title or body
+    if has_structured:
+        html = create_github_issue_html(
+            repo=repo or "",
+            body=body or "",
+            created_at=created_at,
+            title=title,
+        )
+        logger.info("Processing GitHub issue (structured payload).")
+        print_html(html)
+        return
+    if content:
+        logger.info("Processing GitHub issue (content-only payload).")
+        print_html(create_github_issue_html(content))
+        return
+    logger.info("No task content or structured issue fields received.")
 
 def print_html(html):
     """Converts HTML into an image and prints it to the receipt printer."""
