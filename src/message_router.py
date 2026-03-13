@@ -11,6 +11,7 @@ from .medium_list import create_list_html
 from .issue_to_html import create_github_issue_html
 from .daily_briefing_builder import daily_briefing
 from .llm_helper import expand_task
+# Lazy import of schedule_trigger_thread in triggered_thread() to avoid circular import with bot
 from .printer import print_text, print_image_to_printer # Renamed print_img to print_image_to_printer to avoid confusion
 
 from PIL import Image
@@ -105,6 +106,11 @@ async def bot_direct_daily_briefing(message):
     # create html, send to HTML printer
     b_html = daily_briefing(message.content)
     print_html(b_html)
+
+def triggered_thread(thread_name):
+    """Schedule fetching the latest message from the given Discord thread and processing it. Returns True if scheduled, False if bot not ready."""
+    from .bot import schedule_trigger_thread
+    return schedule_trigger_thread(thread_name)
 
 
 def issue_processor(message):

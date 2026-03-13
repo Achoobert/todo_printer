@@ -16,12 +16,12 @@ SCHEDULED_TASKS = [
 ]
 
 async def send_discord_message_trigger(thread_name: str):
-    """Sends a POST request to the Discord service to trigger message fetching."""
-    discord_service_url = "http://localhost:8555/trigger_thread" # Assuming this endpoint will be created in bot.py
+    """Sends a POST request to the core service, which triggers Discord service to trigger message fetching then printing"""
+    service_url = "http://localhost:8333/trigger_thread" # Assuming this endpoint will be created in bot.py
     payload = {"thread_name": thread_name}
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(discord_service_url, json=payload) as response:
+            async with session.post(service_url, json=payload) as response:
                 response.raise_for_status()
                 logger.info(f"Successfully triggered Discord service for thread '{thread_name}'.")
     except aiohttp.ClientError as e:

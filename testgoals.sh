@@ -1,1 +1,1 @@
-curl -X POST -H "Content-Type: application/json" -d '{"thread_name": "goals"}' http://192.168.1.136:8555/trigger_thread
+curl -X POST -H "Content-Type: application/json" -d '{"thread_name": "goals"}' http://192.168.1.136:8333/trigger_thread

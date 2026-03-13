@@ -1,4 +1,4 @@
-    pip3 install -r requirements.txt
+pip3 install -r requirements.txt
 source venv/bin/activate
 nohup python3 main.py &
 
@@ -38,7 +38,11 @@ The server will be accessible on your LAN at `http://192.168.x.x:8333` (replace 
 
 You can send tasks to the printer using Apple Shortcuts by making a POST request to the `/apple-shortcut-task` endpoint.
 
-**Endpoint:** `http://192.168.x.x:8333/apple-shortcut-task` (replace `192.168.x.x` with your Raspberry Pi's actual IP address)
+**Endpoint:** 
+8333: 
+submit
+
+trigger_thread
 
 **Method:** `POST`
 

@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request
-from .message_router import web_processor, issue_processor
+import logging
 
+from flask import Flask, render_template, request, jsonify
+from .message_router import web_processor, issue_processor, triggered_thread
+
+logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
@@ -72,14 +75,25 @@ def print_specific_list(list_name):
         return f"{list_name.capitalize()} list printed and cleared!", 200
     return f"No items in {list_name.capitalize()} list to print.", 200
 
-import logging
 
-logger = logging.getLogger(__name__)
+@app.route("/trigger_thread", methods=["POST"])
+def trigger_thread():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    data = request.get_json()
+    thread_name = data.get("thread_name")
+    if not thread_name:
+        return jsonify({"error": "'thread_name' field missing"}), 400
+    logger.info(f"Received trigger for thread: {thread_name}")
+    if triggered_thread(thread_name):
+        return jsonify({"status": "triggered", "thread_name": thread_name}), 200
+    return jsonify({"error": "Discord bot not ready"}), 503
+
 
 def start():
     logger.info("Attempting to start Flask app.")
     try:
-        app.run(host="0.0.0.0", port=8444)
+        app.run(host="0.0.0.0", port=8333)
         logger.info("Flask app started successfully.")
     except Exception as e:
         logger.error(f"Failed to start Flask app: {e}")

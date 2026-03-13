@@ -8,4 +8,6 @@ pkill -f bot.py
 pkill -f main.py
 pkill -f app.py
 pkill -f scheduler
+docker stop todo_printer_container
+docker rm todo_printer_container
 sleep 1
