@@ -19,6 +19,18 @@ lsusb
 
 2.  **Hardware:** Make sure your ESC/POS printer is connected and configured correctly for `escpos.printer.Usb` to function.
 
+Additional perms to let script acceess usb printer: 
+sudo usermod -aG plugdev $USER
+sudo udevadm control --reload-rules && sudo udevadm trigger
+
+sudo usermod -aG lp <your username>
+sudo -u <your username> sg lp -c 'venv/bin/python main.py'
+
+### Add fonts
+
+sudo apt install fonts-symbola
+fc-cache -f
+
 ## Running the Server
 
 To start the web server, navigate to the project directory and run:
@@ -93,3 +105,4 @@ For a more robust and manageable persistent service, especially for production e
      kill
 
 problems to solve: dynamic pdf-html size
+
