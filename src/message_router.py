@@ -1,9 +1,15 @@
 import os
+import re
 import requests
 import tempfile
 import logging
 
 logger = logging.getLogger(__name__)
+
+_IMG_CHANNEL_MAX_BYTES = 10 * 1024 * 1024
+_IMG_CHANNEL_REQUEST_TIMEOUT = 30
+_IMG_CHANNEL_UA = {"User-Agent": "todo_printer/1.0"}
+_URL_IN_TEXT_RE = re.compile(r"https?://[^\s<>\"')]+", re.IGNORECASE)
 
 from .html_to_image import html_convert_to_image, create_text_image
 from .short_task import create_short_task_html
@@ -15,7 +21,94 @@ from .llm_helper import expand_task
 from .printer import print_text, print_image_to_printer # Renamed print_img to print_image_to_printer to avoid confusion
 
 from PIL import Image
-import io # Import io for in-memory image handling
+import io  # Import io for in-memory image handling
+
+
+def _trim_trailing_url_chars(url: str) -> str:
+    return url.rstrip(").,]'\"")
+
+
+def _collect_img_channel_candidate_urls(message):
+    """Ordered URLs: attachments, embed image/thumbnail/url, then bare http(s) in content. Deduped."""
+    seen = set()
+    out = []
+
+    def add(u):
+        if not u or not isinstance(u, str):
+            return
+        u = _trim_trailing_url_chars(u.strip())
+        if not u.startswith(("http://", "https://")):
+            return
+        if u in seen:
+            return
+        seen.add(u)
+        out.append(u)
+
+    for att in message.attachments:
+        add(att.url)
+    for emb in message.embeds:
+        if emb.image and emb.image.url:
+            add(emb.image.url)
+        if emb.thumbnail and emb.thumbnail.url:
+            add(emb.thumbnail.url)
+        if emb.url:
+            add(emb.url)
+    for m in _URL_IN_TEXT_RE.findall(message.content or ""):
+        add(m)
+    return out
+
+
+def _download_image_bytes_capped(url):
+    r = requests.get(
+        url,
+        headers=_IMG_CHANNEL_UA,
+        timeout=_IMG_CHANNEL_REQUEST_TIMEOUT,
+        stream=True,
+    )
+    r.raise_for_status()
+    buf = io.BytesIO()
+    total = 0
+    for chunk in r.iter_content(chunk_size=65536):
+        if not chunk:
+            continue
+        total += len(chunk)
+        if total > _IMG_CHANNEL_MAX_BYTES:
+            raise ValueError(
+                f"response larger than {_IMG_CHANNEL_MAX_BYTES} bytes, aborting"
+            )
+        buf.write(chunk)
+    return buf.getvalue()
+
+
+def _normalize_for_bw_print(pil_img):
+    img = pil_img
+    if img.mode == "P" and "transparency" in img.info:
+        img = img.convert("RGBA")
+    if img.mode in ("RGBA", "LA"):
+        base = Image.new("RGB", img.size, (255, 255, 255))
+        if img.mode == "RGBA":
+            base.paste(img, mask=img.split()[3])
+        else:
+            base.paste(img, mask=img.split()[1])
+        img = base
+    else:
+        img = img.convert("RGB")
+    return img.convert("1", dither=Image.FLOYDSTEINBERG)
+
+
+def try_print_image_from_url(url: str) -> bool:
+    try:
+        data = _download_image_bytes_capped(url)
+        bio = io.BytesIO(data)
+        img = Image.open(bio)
+        img.load()
+        bw = _normalize_for_bw_print(img)
+        print_image_to_printer(bw)
+        return True
+    except Exception as e:
+        logger.warning("img channel: failed url=%s err=%s", url, e)
+        return False
+
 
 def web_processor(message):
     task_content = message.get("content")
@@ -64,24 +157,18 @@ async def bot_processor(message, client):
         print_text_as_image(message.content)
     
     if message.channel.name == "img":
-        if message.attachments:
-            for attachment in message.attachments:
-                if 'image' in attachment.content_type:
-                    # Download image and convert to PIL Image object in memory
-                    try:
-                        response = requests.get(attachment.url)
-                        response.raise_for_status()
-                        img_data = io.BytesIO(response.content)
-                        img = Image.open(img_data)
-                        img = img.convert("1", dither=Image.FLOYDSTEINBERG)
-                        print_image_to_printer(img)
-                    except requests.exceptions.RequestException as e:
-                        print(f"Error downloading image from {attachment.url}: {e}")
-                    except Exception as e:
-                        print(f"Error processing image: {e}")
-                    break
+        candidates = _collect_img_channel_candidate_urls(message)
+        if not candidates:
+            logger.info("img channel: no image URLs or attachments on message")
         else:
-            return "Please attach an image to print."
+            for url in candidates:
+                if try_print_image_from_url(url):
+                    break
+            else:
+                logger.info(
+                    "img channel: all candidates failed message_id=%s",
+                    getattr(message, "id", None),
+                )
 
     if message.content.startswith('$hello'):
         return 'Hello!'
@@ -94,7 +181,7 @@ async def bot_direct(message, client):
         short_task_html = create_short_task_html(message.content, priority="LOW")
         print_html(short_task_html)
     
-    if message.channel.name == "goals":
+    if message.channel.name == "goals" or message.channel.name == "morning":
         # logger.info(f"Processing  message from goals")
         b_html = daily_briefing(message.content)
         print_html(b_html)
@@ -136,6 +223,16 @@ def issue_processor(message):
         print_html(create_github_issue_html(content))
         return
     logger.info("No task content or structured issue fields received.")
+
+def print_lazy_gm():
+    tables = ["Crusaders","Wildcards","Saga","Carrotbottoms"]
+    with open("lazy_gm.html", "r") as f:
+        lazy_gm_content = f.read()
+        for table in tables:
+            lazy_gm_content = lazy_gm_content.replace("TABLE_NAME", table)
+            html_output = html_convert_to_image(lazy_gm_content)
+            print_image_to_printer(html_output)
+
 
 def print_html(html):
     """Converts HTML into an image and prints it to the receipt printer."""

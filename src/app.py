@@ -1,7 +1,7 @@
 import logging
 
 from flask import Flask, render_template, request, jsonify
-from .message_router import web_processor, issue_processor, triggered_thread
+from .message_router import web_processor, issue_processor, triggered_thread, print_lazy_gm
 
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
@@ -18,6 +18,10 @@ def submit():
         return "Task submitted and sent to printer!", 200
     return "Error: Request must be JSON.", 400
 
+@app.route("/lazy-gm", methods=["POST"])
+def lazy_gm():
+    print_lazy_gm()
+    return "Lazy GM printed!", 200
 # {content: ($repo + ": " + .title + " " + (((.body // "") | split("\n")[0:3] | join(" ") | .[0:200]) // "") + " " + .createdAt)}'
 @app.route("/submit-todo-github-issue", methods=["POST"])
 def submit_todo_github_issue():
